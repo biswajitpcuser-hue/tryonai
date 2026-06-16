@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0a0f0e;color:#e8efec;min-height:100vh;padding:16px}
+.pw-page{display:flex;align-items:center;justify-content:center;min-height:90vh}
+.pw-box{background:#131a18;border:1px solid #1f2b27;border-radius:12px;padding:32px;width:100%;max-width:340px;text-align:center}
+.pw-box h1{font-size:20px;margin-bottom:4px}
+.pw-box p{color:#889f97;font-size:13px;margin-bottom:20px}
+.pw-box input{width:100%;background:#0a0f0e;border:1px solid #1f2b27;border-radius:8px;padding:12px;color:#fff;font-size:15px;outline:none;margin-bottom:12px}
+.pw-box input:focus{border-color:#08a966}
+.pw-box button{width:100%;background:#08a966;color:#fff;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:600;cursor:pointer}
+.pw-box button:hover{background:#079857}
+.pw-box .err{color:#ff3b4a;font-size:13px;margin-bottom:8px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #1f2b27;margin-bottom:16px}
+.top h1{font-size:17px}
+.top button{background:rgba(255,59,74,0.15);color:#ff3b4a;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer}
+.stats{display:flex;gap:8px;margin-bottom:16px}
+.stat{background:#131a18;border:1px solid #1f2b27;border-radius:8px;padding:12px;flex:1;text-align:center}
+.stat .l{font-size:11px;color:#889f97;text-transform:uppercase}
+.stat .v{font-size:20px;font-weight:800;margin-top:2px}
+.stat .v.g{color:#08a966}
+.stat .v.a{color:#f5b342}
+.add{background:#131a18;border:1px solid #1f2b27;border-radius:8px;padding:14px;margin-bottom:12px}
+.add h3{font-size:12px;color:#889f97;margin-bottom:10px;text-transform:uppercase}
+.add-r{display:flex;gap:8px}
+.add-r input{flex:1;background:#0a0f0e;border:1px solid #1f2b27;border-radius:6px;padding:10px 12px;color:#fff;font-size:14px;outline:none}
+.add-r input:focus{border-color:#08a966}
+.add-r button{background:#08a966;color:#fff;border:none;border-radius:6px;padding:10px 16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.srch{background:#131a18;border:1px solid #1f2b27;border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:center;margin-bottom:12px;color:#4d635c}
+.srch input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px}
+.srch input::placeholder{color:#4d635c}
+.cnt{font-size:12px;color:#889f97;margin-bottom:6px}
+.ul{display:flex;flex-direction:column;gap:6px}
+.u{display:flex;align-items:center;justify-content:space-between;background:#131a18;border:1px solid #1f2b27;border-radius:8px;padding:12px 14px}
+.ui{flex:1;min-width:0}
+.ui .nm{font-size:14px;font-weight:600}
+.ui .em{font-size:12px;color:#889f97}
+.ui .dt{font-size:11px;color:#4d635c;margin-top:2px}
+.ua{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.bg{padding:3px 8px;border-radius:999px;font-size:10px;font-weight:600}
+.bg.g{background:rgba(8,169,102,0.15);color:#08a966}
+.bg.r{background:rgba(255,59,74,0.12);color:#ff3b4a}
+.bs{border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer}
+.bs.u{background:#08a966;color:#fff}
+.bs.r{background:rgba(255,59,74,0.15);color:#ff3b4a}
+.bs.d{background:rgba(255,59,74,0.1);color:#ff3b4a;padding:5px 8px;font-size:13px}
+.empty{text-align:center;padding:30px;color:#4d635c;font-size:13px}
+.tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#131a18;border:1px solid #1f2b27;border-radius:8px;padding:10px 18px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,0.4);opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;z-index:99}
+.tst.s{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="tst" id="t"></div>
+
+<script>
+const PASS = "admin@123";
+const KEY = "trx_users_v2";
+
+function $(id){return document.getElementById(id)}
+function q(s,ctx){return (ctx||document).querySelector(s)}
+function qq(s,ctx){return (ctx||document).querySelectorAll(s)}
+
+function t(m){const e=$('t');e.textContent=m;e.classList.add('s');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('s'),2000)}
+
+function g(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
+function s(d){localStorage.setItem(KEY,JSON.stringify(d))}
+function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function td(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+let authed=localStorage.getItem('_au')==='1';
+function sa(v){if(v){localStorage.setItem('_au','1')}else{localStorage.removeItem('_au')}authed=v}
+
+function login(){
+  $('app').innerHTML=`
+    <div class="pw-page">
+      <div class="pw-box">
+        <h1>Admin</h1>
+        <p>Password dalo</p>
+        <div class="err" id="er"></div>
+        <input type="password" id="p" placeholder="Password" autofocus>
+        <button id="b">Login</button>
+      </div>
+    </div>
+  `;
+  $('b').onclick=()=>{
+    if($('p').value===PASS){sa(1);main()}
+    else{$('er').textContent='Wrong password'}
+  };
+  $('p').addEventListener('keydown',e=>{if(e.key==='Enter')$('b').click()});
+}
+
+function main(){
+  let u=g();
+  let uc=u.filter(x=>x.unlimited).length;
+  $('app').innerHTML=`
+    <div class="top">
+      <h1>Admin Panel</h1>
+      <button id="lo">Logout</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="l">Total</div><div class="v g">${u.length}</div></div>
+      <div class="stat"><div class="l">Unlimited</div><div class="v a">${uc}</div></div>
+    </div>
+    <div class="add">
+      <h3>Unlimited dena</h3>
+      <div class="add-r">
+        <input type="email" id="em" placeholder="user@gmail.com">
+        <button id="ub">Unlimited</button>
+      </div>
+    </div>
+    <div class="srch"><span>&#x1F50D;</span><input type="text" id="se" placeholder="Search..." oninput="f()"></div>
+    <div class="cnt">${u.length} users</div>
+    <div class="ul" id="ul"></div>
+  `;
+  $('lo').onclick=()=>{sa(0);login()};
+  $('ub').onclick=()=>{
+    let e=$('em').value.trim();if(!e){t('Email dalo');return}
+    let u=g(),x=u.find(i=>i.email===e);
+    if(x){x.unlimited=true;x.ut=Date.now();s(u);t('Unlimited ho gaya');$('em').value='';main()}
+    else{t('Pehle user add karo');}
+  };
+  $('em').addEventListener('keydown',e=>{if(e.key==='Enter')$('ub').click()});
+  lu(u);
+}
+
+function lu(u){
+  let h='';
+  if(u.length===0){h='<div class="empty">Koi user nahi hai</div>'}
+  else{
+    u.forEach(x=>{
+      let n=x.n||x.email.split('@')[0],inl=n[0].toUpperCase();
+      let d=x.c?new Date(x.c).toLocaleDateString():'Aj';
+      h+=`
+        <div class="u" data-em="${x.email}" data-nm="${n.toLowerCase()}" data-es="${x.email.toLowerCase()}">
+          <div class="ui">
+            <div class="nm">${n}</div>
+            <div class="em">${x.email}</div>
+            <div class="dt">${d} ${x.unlimited?'&#9679; Unlimited':''}</div>
+          </div>
+          <div class="ua">
+            <span class="bg ${x.unlimited?'g':'r'}">${x.unlimited?'Unlimited':'5/day'}</span>
+            <button class="bs ${x.unlimited?'r':'u'}" onclick="tu('${x.email}',${!x.unlimited})">${x.unlimited?'Revoke':'Unlock'}</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+  $('ul').innerHTML=h;
+}
+
+window.f=function(){
+  let q=($('se')?.value||'').toLowerCase();
+  qq('.u').forEach(r=>{
+    r.style.display=(r.dataset.nm.includes(q)||r.dataset.es.includes(q))?'':'none';
+  });
+};
+
+window.tu=function(e,v){
+  let u=g(),x=u.find(i=>i.email===e);
+  if(!x)return;
+  x.unlimited=v;x.ut=v?Date.now():null;
+  s(u);t(v?'Unlimited on':'Unlimited off');main();
+};
+
+if(authed){main()}else{login()}
+</script>
+</body>
+</html>
