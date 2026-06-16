@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <title>Admin Panel | TryonAI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0f0e; --surface: #131a18; --surface2: #1a2421;
+      --border: #1f2b27; --text: #e8efec; --text2: #889f97; --text3: #4d635c;
+      --green: #08a966; --red: #ff3b4a; --amber: #f5b342; --violet: #8b6cf6;
+      --radius: 12px; --radius-sm: 8px;
+    }
+    html { font-size: 15px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .login-page {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 20px; background: radial-gradient(ellipse at 50% 0%, #0f1a15 0%, var(--bg) 60%);
+    }
+    .login-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 40px 32px; width: 100%; max-width: 380px; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .login-card .logo {
+      width: 48px; height: 48px; background: var(--green); border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+      font-size: 24px; font-weight: 800; color: #fff;
+    }
+    .login-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .login-card p { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+    .login-card button[type="submit"] {
+      width: 100%; background: var(--green); color: #fff; border: none;
+      border-radius: var(--radius-sm); padding: 14px; font-size: 15px;
+      font-weight: 600; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 10px;
+    }
+    .login-card button[type="submit"]:hover { background: #079857; }
+    .login-card button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-card button svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .login-error {
+      color: var(--red); font-size: 13px; padding: 8px 12px;
+      background: rgba(255,59,74,0.1); border-radius: var(--radius-sm); margin-bottom: 12px;
+    }
+    .login-info {
+      color: var(--text2); font-size: 12px; margin-top: 16px;
+    }
+
+    .panel { max-width: 720px; margin: 0 auto; padding: 16px; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .topbar-left .logo-sm {
+      width: 32px; height: 32px; background: var(--green); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; color: #fff;
+    }
+    .topbar-left h1 { font-size: 18px; font-weight: 700; }
+    .topbar-left .admin-email { font-size: 12px; color: var(--text2); }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .btn-icon {
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text2); cursor: pointer; display: flex; align-items: center;
+      justify-content: center; font-size: 16px;
+    }
+    .btn-icon:hover { border-color: var(--text3); color: var(--text); }
+    .btn-logout {
+      padding: 8px 16px; border: none; border-radius: var(--radius-sm);
+      background: rgba(255,59,74,0.15); color: var(--red); font-size: 13px;
+      font-weight: 600; cursor: pointer;
+    }
+    .btn-logout:hover { background: rgba(255,59,74,0.25); }
+
+    .stats-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px; margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px 16px;
+    }
+    .stat-card .stat-label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .stat-value { font-size: 24px; font-weight: 800; margin-top: 4px; }
+    .stat-card .stat-value.green { color: var(--green); }
+    .stat-card .stat-value.amber { color: var(--amber); }
+    .stat-card .stat-value.violet { color: var(--violet); }
+
+    .tab-content { display: flex; flex-direction: column; gap: 12px; }
+
+    .add-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 16px;
+    }
+    .add-card h3 { font-size: 13px; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .add-row { display: flex; gap: 8px; }
+    .add-row input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 11px 14px; color: var(--text);
+      font-size: 14px; outline: none;
+    }
+    .add-row input:focus { border-color: var(--green); }
+    .add-row input::placeholder { color: var(--text3); }
+    .add-row button {
+      padding: 11px 20px; background: var(--green); color: #fff;
+      border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+    }
+    .add-row button:hover { background: #079857; }
+    .add-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .search-bar {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 11px 14px; display: flex;
+      align-items: center; gap: 10px; color: var(--text3); font-size: 15px;
+    }
+    .search-bar input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--text); font-size: 14px;
+    }
+    .search-bar input::placeholder { color: var(--text3); }
+
+    .user-count { font-size: 13px; color: var(--text2); padding: 4px 0; }
+    .user-list { display: flex; flex-direction: column; gap: 6px; }
+    .user-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .user-row:hover { border-color: #2a3a34; }
+    .user-info { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+      background: var(--surface2); flex-shrink: 0;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .user-avatar .fallback {
+      width: 100%; height: 100%; display: flex; align-items: center;
+      justify-content: center; font-size: 14px; font-weight: 700; color: var(--text2);
+    }
+    .user-details { min-width: 0; }
+    .user-details .name { font-size: 14px; font-weight: 600; }
+    .user-details .email { font-size: 12px; color: var(--text2); }
+    .user-details .meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .user-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .badge {
+      padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    }
+    .badge.unlimited { background: rgba(8,169,102,0.15); color: var(--green); }
+    .badge.limited { background: rgba(255,59,74,0.12); color: var(--red); }
+
+    .btn-sm {
+      padding: 6px 14px; border: none; border-radius: 6px; font-size: 12px;
+      font-weight: 600; cursor: pointer; white-space: nowrap;
+    }
+    .btn-sm.unlock { background: var(--green); color: #fff; }
+    .btn-sm.revoke { background: rgba(255,59,74,0.15); color: var(--red); }
+    .btn-sm.unlock:hover { background: #079857; }
+    .btn-sm.revoke:hover { background: rgba(255,59,74,0.25); }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    .toast-container {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 1000; pointer-events: none;
+    }
+    .toast {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px 20px; font-size: 14px; color: var(--text);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      opacity: 0; transform: translateY(10px); transition: all 0.3s ease;
+      pointer-events: auto; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .loading { text-align: center; padding: 40px; color: var(--text3); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 24px; height: 24px; border: 2px solid var(--border);
+      border-top-color: var(--green); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+    }
+
+    @media (max-width: 480px) {
+      .panel { padding: 12px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .user-row { flex-direction: column; align-items: stretch; gap: 10px; }
+      .user-actions { justify-content: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="loading"><div class="spinner"></div><p>Loading...</p></div>
+  </div>
+  <div class="toast-container"><div class="toast" id="toast"></div></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js">
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js">
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js">
+  </script>
+  <script>
+    // ===== CONFIG - Edit karein apne hisaab se =====
+    // Firebase config (yahi hai jo .env.local me hai)
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyB5smmOAWiyDuewdeEGq-vtr44xEXvMC7U",
+      authDomain: "trxtrader1-d7dde.firebaseapp.com",
+      projectId: "trxtrader1-d7dde",
+      storageBucket: "trxtrader1-d7dde.firebasestorage.app",
+      messagingSenderId: "733137268147",
+      appId: "1:733137268147:web:c96a203acd3d862d762fc6",
+      measurementId: "G-Z7Q40CFPSJ",
+    };
+
+    // Admin email - sirf ye email admin panel login kar sakta hai
+    const ADMIN_EMAILS = ["biswajitbhai5@gmail.com", "mithansukla783@gmail.com"];
+
+    // Firestore collection names
+    const USERS_COLLECTION = "admin_users";
+    const ACTIVATIONS_COLLECTION = "admin_activations";
+    // ==============================================
+
+    const AUTH_KEY = "trx_firebase_admin_auth";
+
+    // Firebase init
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    db.settings({ merge: true });
+
+    // --- Utils ---
+    function $(id) { return document.getElementById(id); }
+    function qsa(sel, ctx) { return (ctx||document).querySelectorAll(sel); }
+
+    let toastTimer;
+    function toast(msg) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+    }
+
+    function renderLoading(msg = 'Loading...') {
+      $('app').innerHTML = `<div class="loading"><div class="spinner"></div><p>${msg}</p></div>`;
+    }
+
+    // --- Auth ---
+    function isAuthed() {
+      return localStorage.getItem(AUTH_KEY) === 'true';
+    }
+    function setAuthed(v) {
+      if (v) localStorage.setItem(AUTH_KEY, 'true');
+      else localStorage.removeItem(AUTH_KEY);
+    }
+
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        if (ADMIN_EMAILS.includes(user.email)) {
+          setAuthed(true);
+          renderPanel(user);
+        } else {
+          auth.signOut();
+          setAuthed(false);
+          renderLogin('This email is not authorized as admin');
+        }
+      } else {
+        setAuthed(false);
+        if (isAuthed()) {
+          renderLogin('Session expired. Please login again.');
+        } else {
+          renderLogin();
+        }
+      }
+    });
+
+    // --- Render ---
+    function renderLogin(errorMsg = '') {
+      $('app').innerHTML = `
+        <div class="login-page">
+          <div class="login-card">
+            <div class="logo">T</div>
+            <h1>Admin Panel</h1>
+            <p>Sign in with your Google account</p>
+            ${errorMsg ? `<div class="login-error">${errorMsg}</div>` : ''}
+            <button type="submit" id="googleBtn">
+              <svg viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.24 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A10.98 10.98 0 0 0 12 23Z"/><path fill="#fff" d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.12-1.44.34-2.1V7.06H2.18A10.98 10.98 0 0 0 1 12c0 1.77.42 3.45 1.18 4.94l3.66-2.84Z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A10.98 10.98 0 0 0 2.18 7.06L5.84 9.9C6.71 7.3 9.14 5.38 12 5.38Z"/></svg>
+              Sign In with Google
+            </button>
+            <p class="login-info">Only authorized admin emails can access this panel</p>
+          </div>
+        </div>
+      `;
+      $('googleBtn').onclick = async () => {
+        $('googleBtn').disabled = true;
+        $('googleBtn').textContent = 'Signing in...';
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: 'select_account' });
+          await auth.signInWithPopup(provider);
+        } catch (err) {
+          $('googleBtn').disabled = false;
+          $('googleBtn').innerHTML = 'Sign In with Google';
+          if (err.code !== 'auth/popup-closed-by-user') {
+            toast('Login failed: ' + err.message);
+          }
+        }
+      };
+    }
+
+    async function renderPanel(user) {
+      renderLoading('Loading users...');
+
+      try {
+        const snap = await db.collection(USERS_COLLECTION)
+          .orderBy('createdAt', 'desc')
+          .get();
+        const users = [];
+        snap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+
+        const historySnap = await db.collection(ACTIVATIONS_COLLECTION)
+          .orderBy('activatedAt', 'desc')
+          .get();
+        const history = [];
+        historySnap.forEach(doc => history.push(doc.data()));
+
+        const unlimitedUsers = users.filter(u => u.unlimited).length;
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayCount = users.filter(u => {
+          const t = u.createdAt?.toDate ? u.createdAt.toDate() : new Date(u.createdAt);
+          return t >= todayStart;
+        }).length;
+
+        $('app').innerHTML = `
+          <div class="panel">
+            <div class="topbar">
+              <div class="topbar-left">
+                <div class="logo-sm">T</div>
+                <div>
+                  <h1>Admin Panel</h1>
+                  <div class="admin-email">${user.email}</div>
+                </div>
+              </div>
+              <div class="topbar-right">
+                <button class="btn-icon" id="refreshBtn" title="Refresh">&#x21bb;</button>
+                <button class="btn-logout" id="logoutBtn">Logout</button>
+              </div>
+            </div>
+
+            <div class="stats-row">
+              <div class="stat-card">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value green">${users.length}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Unlimited</div>
+                <div class="stat-value amber">${unlimitedUsers}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Today Signups</div>
+                <div class="stat-value violet">${todayCount}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Activations</div>
+                <div class="stat-value">${history.length}</div>
+              </div>
+            </div>
+
+            <div class="add-card">
+              <h3>Grant Unlimited Access</h3>
+              <div class="add-row">
+                <input type="email" id="unlimitedEmail" placeholder="user@gmail.com" required>
+                <button id="unlimitedBtn">Make Unlimited</button>
+              </div>
+            </div>
+
+            <div class="search-bar">
+              <span>&#x1F50D;</span>
+              <input type="text" id="searchInput" placeholder="Search by name or email..." oninput="filterUsers()">
+            </div>
+            <div class="user-count">${users.length} user${users.length !== 1 ? 's' : ''}</div>
+            <div class="user-list" id="userList">
+          ${users.length === 0 ? `
+            <div class="empty-state">
+              <div class="empty-icon">&#x1F465;</div>
+              <p>No users yet. Users will appear here when they sign into the app.</p>
+            </div>
+          ` : users.map(u => {
+            const name = u.displayName || u.email?.split('@')[0] || 'Unknown';
+            const initial = name[0].toUpperCase();
+            const date = u.createdAt?.toDate ? u.createdAt.toDate().toLocaleDateString() : new Date(u.createdAt).toLocaleDateString();
+            return `
+              <div class="user-row" data-email="${u.email}" data-name="${name.toLowerCase()}" data-email-search="${u.email.toLowerCase()}">
+                <div class="user-info">
+                  <div class="user-avatar">
+                    ${u.photoURL ? `<img src="${u.photoURL}" alt="">` : `<div class="fallback">${initial}</div>`}
+                  </div>
+                  <div class="user-details">
+                    <div class="name">${name}</div>
+                    <div class="email">${u.email}</div>
+                    <div class="meta">Joined ${date}</div>
+                  </div>
+                </div>
+                <div class="user-actions">
+                  <span class="badge ${u.unlimited ? 'unlimited' : 'limited'}">
+                    ${u.unlimited ? 'Unlimited' : '5/day'}
+                  </span>
+                  <button class="btn-sm ${u.unlimited ? 'revoke' : 'unlock'}"
+                    onclick="toggleUnlimited('${u.email}', ${!u.unlimited})">
+                    ${u.unlimited ? 'Revoke' : 'Unlock'}
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+            </div>
+          </div>
+        `;
+
+        $('logoutBtn').onclick = () => { auth.signOut(); };
+        $('refreshBtn').onclick = () => renderPanel(user);
+
+        $('unlimitedBtn').onclick = async () => {
+          const email = $('unlimitedEmail').value.trim();
+          if (!email) { toast('Please enter an email'); return; }
+          $('unlimitedBtn').disabled = true;
+          $('unlimitedBtn').textContent = 'Granting...';
+          const success = await setUserUnlimited(email, true);
+          if (success) toast('Unlimited granted to ' + email);
+          else toast('User not found. Tell them to sign in first.');
+          $('unlimitedBtn').disabled = false;
+          $('unlimitedBtn').textContent = 'Make Unlimited';
+          $('unlimitedEmail').value = '';
+        };
+        $('unlimitedEmail').addEventListener('keydown', e => { if (e.key === 'Enter') $('unlimitedBtn').click(); });
+
+      } catch (err) {
+        $('app').innerHTML = `
+          <div class="panel">
+            <div class="topbar">
+              <div class="topbar-left">
+                <div class="logo-sm">T</div>
+                <h1>Admin Panel</h1>
+              </div>
+              <div class="topbar-right">
+                <button class="btn-logout" id="logoutBtn">Logout</button>
+              </div>
+            </div>
+            <div class="empty-state">
+              <div class="empty-icon">&#x26A0;</div>
+              <p>Error loading data: ${err.message}</p>
+              <p style="margin-top:8px;font-size:13px;color:var(--text2)">Make sure Firestore is enabled in Firebase Console</p>
+            </div>
+          </div>
+        `;
+        $('logoutBtn').onclick = () => { auth.signOut(); };
+      }
+    }
+
+    window.filterUsers = function() {
+      const q = ($('searchInput')?.value || '').toLowerCase();
+      document.querySelectorAll('.user-row').forEach(row => {
+        const match = row.dataset.name.includes(q) || row.dataset.emailSearch.includes(q);
+        row.style.display = match ? '' : 'none';
+      });
+    };
+
+    async function setUserUnlimited(email, value) {
+      try {
+        const snap = await db.collection(USERS_COLLECTION)
+          .where('email', '==', email)
+          .get();
+        if (snap.empty) return false;
+        const doc = snap.docs[0];
+        await doc.ref.update({
+          unlimited: value,
+          unlimitedAt: value ? firebase.firestore.FieldValue.serverTimestamp() : null,
+        });
+        if (value) {
+          await db.collection(ACTIVATIONS_COLLECTION).add({
+            email,
+            activatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+        return true;
+      } catch (err) {
+        console.error('Toggle unlimited error:', err);
+        return false;
+      }
+    }
+
+    window.toggleUnlimited = async function(email, value) {
+      const success = await setUserUnlimited(email, value);
+      if (success) {
+        toast(value ? 'Unlimited activated' : 'Unlimited revoked');
+        auth.onAuthStateChanged((user) => {
+          if (user) renderPanel(user);
+        });
+      } else {
+        toast('Failed to update');
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1181,20 +1181,20 @@ function MainApp({ user }) {
 
   useEffect(() => {
     if (user?.email) {
-      setRemaining(getRemainingPredictions(user.email));
+      getRemainingPredictions(user.email).then(setRemaining);
     }
   }, [user]);
 
-  function handleBetClick() {
+  async function handleBetClick() {
     if (!user?.email) return;
-    const r = getRemainingPredictions(user.email);
+    const r = await getRemainingPredictions(user.email);
     if (r === 0) {
       router.push('/subscription');
       return;
     }
     if (r > 0) {
       incrementPredictionCount(user.email);
-      const newRemaining = getRemainingPredictions(user.email);
+      const newRemaining = await getRemainingPredictions(user.email);
       setRemaining(newRemaining);
       if (newRemaining === 0) {
         router.push('/subscription');
@@ -1205,9 +1205,9 @@ function MainApp({ user }) {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToastVisible(false), 2000);
   }
-  function handleGeneratePrediction() {
+  async function handleGeneratePrediction() {
     if (!user?.email) return;
-    const r = getRemainingPredictions(user.email);
+    const r = await getRemainingPredictions(user.email);
     if (r === 0) {
       router.push('/subscription');
       return;
@@ -1221,7 +1221,7 @@ function MainApp({ user }) {
     }
     if (r > 0) {
       incrementPredictionCount(user.email);
-      const newRemaining = getRemainingPredictions(user.email);
+      const newRemaining = await getRemainingPredictions(user.email);
       setRemaining(newRemaining);
       if (newRemaining === 0) {
         setTimeout(() => router.push('/subscription'), 1500);
