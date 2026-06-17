@@ -1,26 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 
-const PASS = "admin@123";
 const AUTH_KEY = "_mab_auth";
-const USERS_KEY = "trx_users";
-const COUNTS_KEY = "trx_pred_counts";
-
-function getUsers() {
-  try { return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); } catch { return []; }
-}
-
-function saveUsers(u) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(u));
-}
-
-function getCounts() {
-  try { return JSON.parse(localStorage.getItem(COUNTS_KEY) || "{}"); } catch { return {}; }
-}
-
-function isAuthed() {
-  return localStorage.getItem(AUTH_KEY) === "1";
-}
 
 export default function ManageAdmin() {
   const [authed, setAuthed] = useState(false);
@@ -30,24 +11,47 @@ export default function ManageAdmin() {
   const [search, setSearch] = useState("");
   const [emailInput, setEmailInput] = useState("");
   const [showAdd, setShowAdd] = useState(false);
+  const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (isAuthed()) {
+    if (localStorage.getItem(AUTH_KEY) === "1") {
       setAuthed(true);
-      setUsers(getUsers());
+      fetchUsers();
     }
   }, []);
 
-  function doLogin() {
-    if (pw === PASS) {
-      localStorage.setItem(AUTH_KEY, "1");
-      setAuthed(true);
-      setUsers(getUsers());
-      setErr("");
-    } else {
-      setErr("Wrong password");
+  async function fetchUsers() {
+    try {
+      const res = await fetch("/api/admin/users");
+      const data = await res.json();
+      setUsers(data.users || []);
+    } catch {
+      setUsers([]);
     }
+  }
+
+  async function doLogin() {
+    setLoading(true);
+    setErr("");
+    try {
+      const res = await fetch("/api/admin/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pw }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem(AUTH_KEY, "1");
+        setAuthed(true);
+        fetchUsers();
+      } else {
+        setErr(data.error || "Wrong password");
+      }
+    } catch {
+      setErr("Server se connect nahi ho pa raha. `npm run dev` chal raha hai?");
+    }
+    setLoading(false);
   }
 
   function logout() {
@@ -56,50 +60,41 @@ export default function ManageAdmin() {
     setPw("");
   }
 
-  function addUser() {
+  async function addUser() {
     const e = emailInput.trim().toLowerCase();
     if (!e) return;
-    const list = getUsers();
-    if (list.find((u) => u.email === e)) {
-      setErr("User already exists");
-      return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: e }),
+      });
+      const data = await res.json();
+      if (data.user) {
+        setEmailInput("");
+        fetchUsers();
+      } else {
+        setErr(data.error || "Failed to add");
+      }
+    } catch {
+      setErr("Server error");
     }
-    list.unshift({
-      email: e,
-      displayName: e.split("@")[0],
-      photoURL: "",
-      unlimited: false,
-      unlimitedAt: null,
-      createdAt: Date.now(),
-    });
-    saveUsers(list);
-    setUsers(list);
-    setEmailInput("");
-    setErr("");
+    setLoading(false);
   }
 
-  function toggleUnlimited(email) {
-    const list = getUsers();
-    const u = list.find((x) => x.email === email);
+  async function toggleUnlimited(email) {
+    const u = users.find((x) => x.email === email);
     if (!u) return;
-    u.unlimited = !u.unlimited;
-    u.unlimitedAt = u.unlimited ? Date.now() : null;
-    saveUsers(list);
-    setUsers([...list]);
-  }
-
-  function removeUser(email) {
-    if (!confirm(`Remove ${email}?`)) return;
-    const list = getUsers().filter((x) => x.email !== email);
-    saveUsers(list);
-    setUsers(list);
-  }
-
-  function dailyUsed(email) {
-    const d = new Date();
-    const k = `${email}_${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const c = getCounts();
-    return c[k] || 0;
+    const newVal = !u.unlimited;
+    try {
+      await fetch("/api/admin/users/unlimited", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, value: newVal }),
+      });
+      fetchUsers();
+    } catch {}
   }
 
   const filtered = users.filter(
@@ -119,12 +114,12 @@ export default function ManageAdmin() {
           <div className="w-full max-w-sm bg-[#131a18] border border-[#1f2b27] rounded-2xl p-8 text-center">
             <div className="w-12 h-12 bg-[#08a966] rounded-xl flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl">M</div>
             <h1 className="text-white text-xl font-bold mb-1">Admin Panel</h1>
-            <p className="text-[#889f97] text-sm mb-6">Password dalo</p>
+            <p className="text-[#889f97] text-sm mb-6">Server-side secure login</p>
             {err && <p className="text-[#ff3b4a] text-sm mb-3">{err}</p>}
             <input
               type="password"
               className="w-full bg-[#0a0f0e] border border-[#1f2b27] rounded-lg p-3 text-white text-sm outline-none mb-3 focus:border-[#08a966]"
-              placeholder="Password"
+              placeholder="Admin Password"
               value={pw}
               onChange={(e) => setPw(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && doLogin()}
@@ -132,10 +127,11 @@ export default function ManageAdmin() {
               autoFocus
             />
             <button
-              className="w-full bg-[#08a966] text-white rounded-lg py-3 text-sm font-semibold hover:bg-[#079857]"
+              className="w-full bg-[#08a966] text-white rounded-lg py-3 text-sm font-semibold hover:bg-[#079857] disabled:opacity-50"
               onClick={doLogin}
+              disabled={loading}
             >
-              Login
+              {loading ? "Verifying..." : "Login"}
             </button>
           </div>
         </div>
@@ -192,11 +188,12 @@ export default function ManageAdmin() {
                   placeholder="user@gmail.com"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addUser()}
+                  onKeyDown={(e) => e.key === "Enter" && !loading && addUser()}
                 />
                 <button
-                  className="bg-[#08a966] text-white text-xs font-semibold px-4 py-2.5 rounded-lg whitespace-nowrap"
+                  className="bg-[#08a966] text-white text-xs font-semibold px-4 py-2.5 rounded-lg whitespace-nowrap disabled:opacity-50"
                   onClick={addUser}
+                  disabled={loading}
                 >
                   Add
                 </button>
@@ -221,7 +218,7 @@ export default function ManageAdmin() {
           <div className="space-y-1.5">
             {filtered.length === 0 ? (
               <p className="text-center text-[#4d635c] py-10 text-sm">
-                {users.length === 0 ? "Koi user nahi hai. App me koi login kare to yahan dikhega." : "Koi match nahi mila"}
+                {users.length === 0 ? "Koi user nahi hai" : "Koi match nahi mila"}
               </p>
             ) : (
               filtered.map((u) => (
@@ -235,7 +232,6 @@ export default function ManageAdmin() {
                       <p className="text-xs text-[#889f97]">{u.email}</p>
                       <p className="text-[10px] text-[#4d635c] mt-0.5">
                         {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "Today"}
-                        {" | "}Used: {dailyUsed(u.email)}/5
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
